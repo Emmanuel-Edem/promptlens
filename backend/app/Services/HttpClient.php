@@ -26,37 +26,34 @@ class HttpClient
 
             $response = $this->client->post($url, [
                 'headers' => $headers,
-                'json' => $body
+                'json' => $body,
             ]);
 
             return json_decode(
-                $response->getBody()->getContents(),
+                (string) $response->getBody(),
                 true
             );
 
         } catch (RequestException $e) {
 
-            if ($e->hasResponse()) {
+            $response = $e->getResponse();
 
-                $response = $e->getResponse();
-
-                $body = (string) $response->getBody();
+            if ($response !== null) {
 
                 throw new \Exception(
-                    "HTTP {$response->getStatusCode()}: {$body}"
+                    "HTTP {$response->getStatusCode()}:\n\n" .
+                    (string) $response->getBody()
                 );
+
             }
 
-            throw new \Exception(
-                "Request failed: " . $e->getMessage()
-            );
+            throw new \Exception($e->getMessage());
 
         } catch (\Throwable $e) {
 
-            throw new \Exception(
-                "Unexpected error: " . $e->getMessage()
-            );
+            throw new \Exception($e->getMessage());
 
         }
+
     }
 }
