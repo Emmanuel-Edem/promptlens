@@ -17,6 +17,7 @@ class GeminiProvider implements AIProviderInterface
     public function analyze(string $imagePath): array
     {
         $apiKey = Config::get('GEMINI_API_KEY');
+        $model = Config::get('GEMINI_MODEL', 'gemini-2.5-flash-lite');
 
         if (empty($apiKey)) {
             throw new \Exception('Gemini API key not configured.');
@@ -34,7 +35,11 @@ class GeminiProvider implements AIProviderInterface
 
         $imageData = base64_encode(file_get_contents($imagePath));
 
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}";
+        $url = sprintf(
+            'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s',
+            $model,
+            $apiKey
+        );
 
         $response = $this->http->postJson(
             $url,
