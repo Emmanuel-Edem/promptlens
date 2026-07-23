@@ -5,10 +5,12 @@ namespace PromptLens\Services;
 class UploadService
 {
     private string $uploadPath;
+    private PromptMetadata $analyzer;
 
     public function __construct()
     {
         $this->uploadPath = dirname(__DIR__, 2) . '/storage/uploads/';
+        $this->analyzer = new PromptMetadata();
     }
 
     public function upload(array $file): array
@@ -33,7 +35,7 @@ class UploadService
             throw new \Exception('Unsupported image type.');
         }
 
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 
         $filename = uniqid('promptlens_', true) . '.' . $extension;
 
@@ -45,11 +47,22 @@ class UploadService
 
         [$width, $height] = getimagesize($destination);
 
+        $analysis = [];
+
+        // PNG metadata extraction currently supports PNG only.
+        if ($mime === 'image/png') {
+            $analysis = $this->analyzer->analyze($destination);
+        }
+
         return [
-            'filename' => $filename,
-            'width' => $width,
-            'height' => $height,
-            'mime' => $mime
+            'success' => true,
+            'file' => [
+                'filename' => $filename,
+                'width' => $width,
+                'height' => $height,
+                'mime' => $mime
+            ],
+            'analysis' => $analysis
         ];
     }
 }
