@@ -4,7 +4,6 @@ namespace PromptLens\Services\Providers;
 
 use PromptLens\Services\Config;
 use PromptLens\Services\HttpClient;
-use PromptLens\Services\Providers\GeminiPrompt;
 
 class GeminiProvider implements AIProviderInterface
 {
@@ -19,7 +18,7 @@ class GeminiProvider implements AIProviderInterface
     {
         $apiKey = Config::get('GEMINI_API_KEY');
 
-        if (!$apiKey) {
+        if (empty($apiKey)) {
             throw new \Exception('Gemini API key not configured.');
         }
 
@@ -29,11 +28,13 @@ class GeminiProvider implements AIProviderInterface
 
         $mime = mime_content_type($imagePath);
 
+        if (!$mime) {
+            throw new \Exception('Unable to determine image MIME type.');
+        }
+
         $imageData = base64_encode(file_get_contents($imagePath));
 
         $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}";
-
-        $prompt = GeminiPrompt::build();
 
         $response = $this->http->postJson(
             $url,
@@ -41,11 +42,14 @@ class GeminiProvider implements AIProviderInterface
                 'Content-Type' => 'application/json'
             ],
             [
+                'generationConfig' => [
+                    'responseMimeType' => 'application/json'
+                ],
                 'contents' => [
                     [
                         'parts' => [
                             [
-                                'text' => $prompt
+                                'text' => GeminiPrompt::build()
                             ],
                             [
                                 'inline_data' => [
@@ -59,9 +63,34 @@ class GeminiProvider implements AIProviderInterface
             ]
         );
 
+        $text = $response['candidates'][0]['content']['parts'][0]['text'] ?? null;
+
+        if (!$text) {
+            return [
+                'provider' => 'Gemini',
+                'success' => false,
+                'message' => 'Gemini returned an empty response.',
+                'raw' => $response
+            ];
+        }
+
+        $analysis = json_decode($text, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return [
+                'provider' => 'Gemini',
+                'success' => false,
+                'message' => 'Gemini did not return valid JSON.',
+                'raw_text' => $text,
+                'raw' => $response
+            ];
+        }
+
         return [
             'provider' => 'Gemini',
-            'response' => $response
+            'success' => true,
+            'analysis' => $analysis,
+            'raw' => $response
         ];
     }
 }
