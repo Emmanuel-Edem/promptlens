@@ -22,11 +22,60 @@ class GeminiProvider implements AIProviderInterface
             throw new \Exception('Gemini API key not configured.');
         }
 
+        if (!file_exists($imagePath)) {
+            throw new \Exception('Image not found.');
+        }
+
+        $mime = mime_content_type($imagePath);
+
+        $imageData = base64_encode(file_get_contents($imagePath));
+
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}";
+
+        $prompt = <<<PROMPT
+Analyze this image and return ONLY valid JSON.
+
+Schema:
+
+{
+  "scene": "",
+  "objects": [],
+  "lighting": "",
+  "composition": "",
+  "camera_angle": "",
+  "art_style": "",
+  "estimated_prompt": "",
+  "confidence": 0
+}
+PROMPT;
+
+        $response = $this->http->postJson(
+            $url,
+            [
+                'Content-Type' => 'application/json'
+            ],
+            [
+                'contents' => [
+                    [
+                        'parts' => [
+                            [
+                                'text' => $prompt
+                            ],
+                            [
+                                'inline_data' => [
+                                    'mime_type' => $mime,
+                                    'data' => $imageData
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        );
+
         return [
             'provider' => 'Gemini',
-            'status' => 'ready',
-            'api_key_loaded' => true,
-            'image' => basename($imagePath)
+            'response' => $response
         ];
     }
 }
