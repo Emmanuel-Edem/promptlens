@@ -4,6 +4,7 @@ namespace PromptLens\Services\Providers;
 
 use PromptLens\Services\Config;
 use PromptLens\Services\HttpClient;
+use PromptLens\Services\Providers\GeminiPrompt;
 
 class GeminiProvider implements AIProviderInterface
 {
@@ -32,22 +33,7 @@ class GeminiProvider implements AIProviderInterface
 
         $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}";
 
-        $prompt = <<<PROMPT
-Analyze this image and return ONLY valid JSON.
-
-Schema:
-
-{
-  "scene": "",
-  "objects": [],
-  "lighting": "",
-  "composition": "",
-  "camera_angle": "",
-  "art_style": "",
-  "estimated_prompt": "",
-  "confidence": 0
-}
-PROMPT;
+        $prompt = GeminiPrompt::build();
 
         $response = $this->http->postJson(
             $url,
