@@ -2,30 +2,46 @@
 
 namespace PromptLens\Controllers;
 
-use PromptLens\Services\ImageEngine;
+use PromptLens\Services\UploadService;
 use PromptLens\Helpers\Response;
 
 class UploadController
 {
+    private UploadService $uploadService;
+
+    public function __construct()
+    {
+        $this->uploadService = new UploadService();
+    }
+
     public function upload(): void
     {
         try {
 
-            $engine = new ImageEngine();
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                Response::json([
+                    'success' => false,
+                    'message' => 'Only POST requests are allowed.'
+                ], 405);
+            }
 
-            $result = $engine->analyze($_FILES['image']);
+            if (!isset($_FILES['image'])) {
+                Response::json([
+                    'success' => false,
+                    'message' => 'No image uploaded.'
+                ], 400);
+            }
 
-            Response::json([
-                'success' => true,
-                'data' => $result
-            ]);
+            $result = $this->uploadService->upload($_FILES['image']);
 
-        } catch (\Exception $e) {
+            Response::json($result);
+
+        } catch (\Throwable $e) {
 
             Response::json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], 400);
+            ], 500);
 
         }
     }
