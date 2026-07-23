@@ -1,0 +1,19 @@
+{
+    "name": "emmanueledem/backend",
+    "description": "PromptLens AI Reverse Engineering API",
+    "license": "MIT",
+    "autoload": {
+    "psr-4": {
+        "PromptLens\\": "app/"
+    }
+},
+    "authors": [
+        {
+            "name": "Emmanuel Edem"
+        }
+    ],
+    "require": {
+        "vlucas/phpdotenv": "^5.6",
+        "guzzlehttp/guzzle": "^8.0"
+    }
+}
