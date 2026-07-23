@@ -13,47 +13,60 @@ class HttpClient
     {
         $this->client = new Client([
             'timeout' => 120,
+            'http_errors' => true,
         ]);
     }
 
+    /**
+     * Send a JSON POST request.
+     *
+     * @param string $url
+     * @param array $headers
+     * @param array $body
+     * @return array
+     * @throws \Exception
+     */
     public function postJson(
         string $url,
-        array $headers,
-        array $body
+        array $headers = [],
+        array $body = []
     ): array {
-
         try {
 
             $response = $this->client->post($url, [
                 'headers' => $headers,
-                'json' => $body,
+                'json'    => $body,
             ]);
 
-            return json_decode(
-                (string) $response->getBody(),
-                true
-            );
+            $json = json_decode((string) $response->getBody(), true);
+
+            if (!is_array($json)) {
+                throw new \Exception('Invalid JSON response received.');
+            }
+
+            return $json;
 
         } catch (RequestException $e) {
 
             $response = $e->getResponse();
 
-            if ($response !== null) {
+            if ($response) {
+
+                $body = (string) $response->getBody();
 
                 throw new \Exception(
-                    "HTTP {$response->getStatusCode()}:\n\n" .
-                    (string) $response->getBody()
+                    "HTTP {$response->getStatusCode()}\n\n{$body}"
                 );
-
             }
 
-            throw new \Exception($e->getMessage());
+            throw new \Exception(
+                "Request failed: " . $e->getMessage()
+            );
 
         } catch (\Throwable $e) {
 
             throw new \Exception($e->getMessage());
 
         }
-
     }
 }
