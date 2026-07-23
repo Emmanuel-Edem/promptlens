@@ -17,15 +17,6 @@ class HttpClient
         ]);
     }
 
-    /**
-     * Send a JSON POST request.
-     *
-     * @param string $url
-     * @param array $headers
-     * @param array $body
-     * @return array
-     * @throws \Exception
-     */
     public function postJson(
         string $url,
         array $headers = [],
@@ -38,7 +29,10 @@ class HttpClient
                 'json'    => $body,
             ]);
 
-            $json = json_decode((string) $response->getBody(), true);
+            $json = json_decode(
+                (string) $response->getBody(),
+                true
+            );
 
             if (!is_array($json)) {
                 throw new \Exception('Invalid JSON response received.');
@@ -50,12 +44,11 @@ class HttpClient
 
             $response = $e->getResponse();
 
-            if ($response) {
-
-                $body = (string) $response->getBody();
+            if ($response !== null) {
 
                 throw new \Exception(
-                    "HTTP {$response->getStatusCode()}\n\n{$body}"
+                    "HTTP {$response->getStatusCode()}:\n\n" .
+                    (string) $response->getBody()
                 );
             }
 
@@ -65,7 +58,9 @@ class HttpClient
 
         } catch (\Throwable $e) {
 
-            throw new \Exception($e->getMessage());
+            throw new \Exception(
+                "Unexpected error: " . $e->getMessage()
+            );
 
         }
     }
